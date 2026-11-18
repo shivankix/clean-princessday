@@ -1,5 +1,5 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { Backdrop, confetti } from './princess/Backdrop'
 import { Gallery } from './princess/Gallery'
@@ -22,25 +22,6 @@ const LINKS = [
   { label: 'Game', href: '#game' },
   { label: 'Quiz', href: '#quiz' },
 ]
-
-const UNLOCK_KEY = 'princess.unlocked'
-const WISH_KEY = 'princess.wish.seen'
-
-function readUnlocked() {
-  try {
-    return window.sessionStorage.getItem(UNLOCK_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function readWishSeen() {
-  try {
-    return window.sessionStorage.getItem(WISH_KEY) === '1'
-  } catch {
-    return false
-  }
-}
 
 function TopBar() {
   const aura = useAura()
@@ -125,16 +106,12 @@ function SiteFooter() {
 }
 
 export function App() {
-  const [unlocked, setUnlocked] = useState(readUnlocked)
-  const [wishSeen, setWishSeen] = useState(readWishSeen)
-  const continueToLock = useCallback(() => {
-    try {
-      window.sessionStorage.setItem(WISH_KEY, '1')
-    } catch {
-      /* no storage, a refresh shows the wish again */
-    }
-    setWishSeen(true)
-  }, [])
+  // Every visit starts the same way: the wish page, then the lock, then the
+  // site. Nothing is remembered between visits, so the wish page can never be
+  // skipped by a leftover browser session.
+  const [unlocked, setUnlocked] = useState(false)
+  const [wishSeen, setWishSeen] = useState(false)
+  const continueToLock = useCallback(() => setWishSeen(true), [])
   const unlock = useCallback(() => {
     // Remember that a real tap just happened: the songs section uses it to
     // start playing without waiting to be asked.
@@ -145,15 +122,6 @@ export function App() {
     }
     setUnlocked(true)
   }, [])
-
-  useEffect(() => {
-    if (!unlocked) return
-    try {
-      window.sessionStorage.setItem(UNLOCK_KEY, '1')
-    } catch {
-      /* no storage, unlocks for this visit only */
-    }
-  }, [unlocked])
 
   return (
     <MotionConfig reducedMotion="user">
